@@ -1,5 +1,6 @@
 package lv.tele2.javaschool.phonebook;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -7,7 +8,8 @@ import java.util.ArrayList;
 
 
 
-public class Record {
+public class Record implements Serializable {
+    public static final long serialVersionUID=1L;
     private static int nextId=1;
     private int id;
 
@@ -17,8 +19,14 @@ public class Record {
     private String email;
 
     public Record (){
-        this.id=nextId;
-        nextId++;
+        if (this.id == 1 ) {
+            this.id=nextId;
+            nextId++;
+        }
+        else {
+            this.id=getId();
+        }
+
     }
 
     public Record (String name, String email, String... phones) {
