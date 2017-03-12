@@ -9,32 +9,62 @@ import java.util.ArrayList;
 
 
 public class Record implements Serializable {
-    public static final long serialVersionUID=1L;
-    private static int nextId=1;
+    private static final long serialVersionUID=1L;
+    private static int nextId;
     private int id;
 
     private String name;
  //   private String [] phone;
     private List<String> phoneList = new ArrayList<>();
     private String email;
+    private int maxId;
 
-    public Record (){
-        if (this.id == 1 ) {
-            this.id=nextId;
-            nextId++;
-        }
-        else {
-            this.id=getId();
+
+
+    public void setMaxId (int maxId){
+//        if (maxId ==0) {
+//            nextId=maxId;
+//        }
+//        else {nextId=1;}
+        this.maxId=maxId;
+        if (maxId !=0) {
+            nextId=maxId;
+        } else {
+            nextId=1;
         }
 
     }
 
-    public Record (String name, String email, String... phones) {
+    public Record (int maxId, String name, String email, String... phones) {
         this();  //mist be first row!
+        this.maxId=maxId;
+        System.out.println("Max="+maxId);
+        if (maxId != 0 ) {
+            nextId=maxId;
+        }
+       else {
+            nextId=1;
+        }
+//        this.id=nextId;
+        nextId++;
+        System.out.println("Next="+nextId);
+        //this.id
+        id=nextId;
         this.name=name;
         this.email=email;
         Collections.addAll(this.phoneList, phones);
 
+    }
+
+    public Record (){
+//        if (maxId != 0 ) {
+//            nextId=maxId;
+//        }
+////       else {
+////            nextId=maxId;
+////
+//       this.id=nextId;
+//       nextId++;
     }
 
     public int getId() {

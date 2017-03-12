@@ -34,6 +34,7 @@ public class Main {
         PhoneBook result = (PhoneBook) ois.readObject();
         ois.close();
         fis.close();
+        System.out.println("Loaded "+result.getSize()+ " records.");
         return result;
     }
 
@@ -43,6 +44,7 @@ public class Main {
         oos.writeObject(phoneBook);
         oos.close();
         fos.close();
+
     }
 
 }
