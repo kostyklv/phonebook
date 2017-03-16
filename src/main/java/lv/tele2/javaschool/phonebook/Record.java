@@ -1,6 +1,9 @@
 package lv.tele2.javaschool.phonebook;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,54 +20,25 @@ public class Record implements Serializable {
  //   private String [] phone;
     private List<String> phoneList = new ArrayList<>();
     private String email;
-    private int maxId;
 
 
 
-    public void setMaxId (int maxId){
-//        if (maxId ==0) {
-//            nextId=maxId;
-//        }
-//        else {nextId=1;}
-        this.maxId=maxId;
-        if (maxId !=0) {
-            nextId=maxId;
-        } else {
-            nextId=1;
-        }
-
+    public Record (String name, String email, String... phones) {
+        this(name, email, Arrays.asList(phones));
     }
 
-    public Record (int maxId, String name, String email, String... phones) {
+    public Record (String name, String email, List<String> phones) {
         this();  //mist be first row!
-        this.maxId=maxId;
-        System.out.println("Max="+maxId);
-        if (maxId != 0 ) {
-            nextId=maxId;
-        }
-       else {
-            nextId=1;
-        }
-//        this.id=nextId;
-        nextId++;
-        System.out.println("Next="+nextId);
         //this.id
         id=nextId;
         this.name=name;
         this.email=email;
-        Collections.addAll(this.phoneList, phones);
-
+        phoneList.addAll(phones);
     }
 
     public Record (){
-//        if (maxId != 0 ) {
-//            nextId=maxId;
-//        }
-////       else {
-////            nextId=maxId;
-////
-//       this.id=nextId;
-//       nextId++;
+       this.id=nextId;
+       nextId++;
     }
 
     public int getId() {
@@ -95,6 +69,11 @@ public class Record implements Serializable {
    //     this.phone = phone;
    // }
 
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        nextId = Math.max(id + 1, nextId);
+    }
+
     @Override
     public String toString() {
         return "Record{" +
@@ -107,4 +86,66 @@ public class Record implements Serializable {
     }
 
 
+    public void saveDB()throws SQLException {
+//        this();
+        Connection con = Main.getDatabase().getConnection();
+        try (Statement stmt = con.createStatement()) {
+            ResultSet rs =stmt.executeQuery("select max(id) from record");
+            rs.next();
+            int maxId = rs.getInt(1);
+            id =maxId+1;
+        }
+        try (PreparedStatement stmt = con.prepareStatement("insert into record (id, name, mail) values (?,?,?)")){
+             //PreparedStatement stmt2 = con.prepareStatement("insert into record (id, name, mail) values (?,?);"
+
+                stmt.setInt(1, id);
+                stmt.setString(2,name);
+                stmt.setString(3,email);
+//            stmt.executeUpdate("insert into record (id, name, mail) values ("+id+", '"+ name+"', '"+email+"')");
+            stmt.execute();
+             Statement stmt2 = con.createStatement();
+            for (String p :phoneList) {
+                stmt2.executeUpdate("insert into phone (record_id, phone) values ("+id+", '"+p+"')");
+            }
+        }
+    }
+
+    public static List<Record> findAll() throws SQLException {
+        List<Record> result = new ArrayList<>();
+        Connection con = Main.getDatabase().getConnection();
+        try (Statement stmt = con.createStatement();
+            ResultSet rs =  stmt.executeQuery("select * from record")){
+            while (rs.next()){
+                Record r=construct (rs);
+
+                result.add(r);
+            }
+        }
+        return result;
+    }
+
+    private static List<String> findPhones (int id) throws SQLException {
+        List<String> result = new ArrayList<>();
+        Connection con = Main.getDatabase().getConnection();
+        try (Statement stmt = con.createStatement();
+             ResultSet rs =  stmt.executeQuery("select * from phone where record_id="+id+"")){
+            while (rs.next()){
+                String phone = rs.getString("phone");
+                result.add(phone);
+            }
+        }
+        return result;
+
+    }
+
+    private static Record construct (ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String email = rs.getString("mail");
+        List<String> phone = findPhones(id);
+
+        Record r = new Record (name, email, phone);
+        r.id=id;
+        return r;
+    }
 }
